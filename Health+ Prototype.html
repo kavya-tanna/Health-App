@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Health+ Prototype</title>
+<style>
+:root{--bg:#eef3f6;--card:#fff;--tx:#17323f;--mut:#6b8290;--pr:#0f8b8d;--ln:#d9e3e8;--ph:#fff}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#10181c;--card:#1a262c;--tx:#e6f0f3;--mut:#8aa3ae;--pr:#27b3b5;--ln:#2b3a41;--ph:#141e23}}
+:root[data-theme="dark"]{--bg:#10181c;--card:#1a262c;--tx:#e6f0f3;--mut:#8aa3ae;--pr:#27b3b5;--ln:#2b3a41;--ph:#141e23}
+*{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--tx);font-family:system-ui,Segoe UI,Arial,sans-serif}
+body{display:flex;justify-content:center;padding:16px}
+#phone{width:100%;max-width:380px;height:720px;max-height:calc(100vh - 32px);background:var(--ph);border:8px solid #263238;border-radius:32px;display:flex;flex-direction:column;overflow:hidden;position:relative}
+.top{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:var(--pr);color:#fff;font-weight:600}
+.top button{background:none;border:0;color:#fff;font-size:20px;cursor:pointer;min-width:28px}
+#body{flex:1;overflow:auto;padding:16px}
+h3{margin:14px 0 8px;font-size:14px;color:var(--mut);text-transform:uppercase;letter-spacing:.5px}
+.card{background:var(--card);border:1px solid var(--ln);border-radius:12px;padding:14px;margin-bottom:10px}
+.row{display:flex;justify-content:space-between;align-items:center;cursor:pointer}
+.row small,.mut{color:var(--mut)}
+.btn{display:block;width:100%;padding:12px;border:0;border-radius:10px;background:var(--pr);color:#fff;font-size:15px;font-weight:600;cursor:pointer;margin-top:10px}
+.btn.o{background:none;color:var(--pr);border:1px solid var(--pr)}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.grid .btn{margin:0}
+input,select{width:100%;padding:11px;margin:4px 0 12px;border:1px solid var(--ln);border-radius:8px;background:var(--card);color:var(--tx);font-size:14px}
+label{font-size:13px;color:var(--mut)}
+.nav{display:flex;border-top:1px solid var(--ln);background:var(--card)}
+.nav button{flex:1;padding:12px;border:0;background:none;color:var(--mut);cursor:pointer;font-size:13px}
+.nav button.on{color:var(--pr);font-weight:700}
+.center{text-align:center}.av{font-size:48px}
+#drawer{position:absolute;inset:0;background:rgba(0,0,0,.45);display:none}
+#drawer>div{width:70%;height:100%;background:var(--card);padding:20px}
+#toast{position:absolute;bottom:70px;left:50%;transform:translateX(-50%);background:#263238;color:#fff;padding:8px 14px;border-radius:20px;font-size:13px;display:none}
+</style></head><body>
+<div id="phone"><div id="top"></div><div id="body"></div><div id="nav"></div>
+<div id="drawer" onclick="this.style.display='none'"><div onclick="event.stopPropagation()">
+<h2 style="color:var(--pr)">HEALTH+</h2><div class="row card" onclick="go('home')">Home</div><div class="row card" onclick="go('records')">Health Records</div><div class="row card" onclick="go('family')">Family Profiles</div><div class="row card" onclick="go('reports')">Reports</div><div class="row card" onclick="go('appts')">Appointments</div><button class="btn o" onclick="logout()">Logout</button></div></div>
+<div id="toast"></div></div>
+<script>
+const D={user:'User',
+cats:{'Medical History':['Asthma diagnosis (2019)','Appendix surgery (2021)'],'Lab Reports':['Blood Test - 02 Oct 2026'],'Prescriptions':['Vitamin D3 course'],'Vaccination':['COVID-19 booster']},
+reports:[['Blood Test','02 Oct 2026'],['Health Check-up','18 Sep 2026'],['X-Ray Report','10 Aug 2026']],
+up:[['Dr. Sharma','10 Oct','10:30 AM','General Check-up']],prev:[['Dr. Patel','20 Sep','Completed']],
+fam:[['Me','Primary User',0,'-'],['Father','Family Member',52,'B+'],['Mother','Family Member',49,'O+']],cur:null,cat:null};
+let stack=[],cur='login';
+const $=id=>document.getElementById(id),v=id=>$(id).value.trim();
+const nrec=()=>Object.values(D.cats).flat().length,p2=n=>String(n).padStart(2,'0');
+function toast(m){const t=$('toast');t.textContent=m;t.style.display='block';setTimeout(()=>t.style.display='none',1800)}
+function go(s,push=true){$('drawer').style.display='none';if(push&&cur)stack.push(cur);cur=s;draw()}
+function back(){cur=stack.pop()||'home';draw()}
+function root(s){stack=[];cur=s;draw()}
+function logout(){$('drawer').style.display='none';stack=[];cur='login';draw()}
+const bar=(t,b=1)=>`<div class="top"><button onclick="${b?'back()':'$(\'drawer\').style.display=\'block\''}">${b?'←':'☰'}</button><span>${t}</span><button onclick="toast('Profile: ${D.user}')">👤</button></div>`;
+const row=(a,b,c)=>`<div class="card row" onclick="${c}"><div>${a}${b?`<br><small>${b}</small>`:''}</div><span>›</span></div>`;
+const inp=(id,l,t='text')=>`<label>${l}</label><input id="${id}" type="${t}">`;
+function draw(){let s=cur,top='',h='',nav=0;
+if(s=='login'){h=`<div class="center" style="margin-top:50px"><h1 style="color:var(--pr);margin:0">HEALTH+</h1><p class="mut">Digital Health App</p></div><div style="margin-top:30px">${inp('e','Email / Phone')}${inp('p','Password','password')}<button class="btn" onclick="login()">LOGIN</button><button class="btn o" onclick="go('signup')">Create Account</button></div>`}
+else if(s=='signup'){top=bar('Create Account');h=inp('n','Full Name')+inp('e','Email / Phone')+inp('p','Password','password')+`<button class="btn" onclick="signup()">REGISTER</button>`}
+else if(s=='home'){nav=1;top=bar('HEALTH+',0);h=`<h2>Hello, ${D.user}!</h2><h3>My Health</h3><div class="card"><b>Health Summary</b><p>Records <b style="float:right">${p2(nrec())}</b></p><p>Reports <b style="float:right">${p2(D.reports.length)}</b></p><p style="margin:0">Appointments <b style="float:right">${p2(D.up.length)}</b></p></div><h3>Quick Access</h3><div class="grid"><button class="btn" onclick="go('records')">Health</button><button class="btn" onclick="go('reports')">Reports</button><button class="btn" onclick="go('appts')">Appointments</button><button class="btn" onclick="go('family')">Family</button></div>`}
+else if(s=='records'){nav=2;top=bar('Health Records');h=`<h3>Select Record</h3>`+Object.keys(D.cats).map(c=>row(c,D.cats[c].length+' item(s)',`D.cat='${c}';go('cat')`)).join('')+`<button class="btn" onclick="go('addrec')">+ Add Record</button>`}
+else if(s=='cat'){top=bar(D.cat);h=D.cats[D.cat].map(i=>`<div class="card">${i}</div>`).join('')||'<p class="mut">No items yet.</p>';h+=`<button class="btn" onclick="go('addrec')">+ Add Record</button>`}
+else if(s=='addrec'){top=bar('Add Record');h=`<label>Category</label><select id="c">${Object.keys(D.cats).map(c=>`<option ${c==D.cat?'selected':''}>${c}</option>`).join('')}</select>`+inp('t','Title / Details')+inp('d','Date','date')+`<button class="btn" onclick="addRec()">Save Record</button>`}
+else if(s=='family'){nav=3;top=bar('Family Profiles');h=`<h3>Profiles</h3>`+D.fam.map((f,i)=>row('👤 '+f[0],f[1],`D.cur=${i};go('member')`)).join('')+`<button class="btn" onclick="go('addmem')">+ Add Member</button>`}
+else if(s=='member'){const f=D.fam[D.cur];top=bar(f[0]+' Profile');h=`<div class="center"><div class="av">👤</div><h2 style="margin:4px">${f[0]}</h2><p class="mut">${f[2]?'Age: '+f[2]:f[1]}</p><p><b>Blood Group: ${f[3]}</b></p></div><h3>Health Information</h3>`+row('Medical Records','',"go('records')")+row('Reports','',"go('reports')")+row('Appointments','',"go('appts')")}
+else if(s=='addmem'){top=bar('Add Member');h=inp('n','Name')+inp('r','Relation')+inp('a','Age','number')+inp('b','Blood Group')+`<button class="btn" onclick="addMem()">Save Member</button>`}
+else if(s=='reports'){top=bar('Reports');h=`<h3>Recent Reports</h3>`+D.reports.map(r=>row(r[0],r[1],`toast('Opening ${r[0]}...')`)).join('')+`<button class="btn" onclick="go('upload')">+ Upload</button>`}
+else if(s=='upload'){top=bar('Upload Report');h=inp('t','Report Name')+inp('d','Date','date')+`<label>File</label><input type="file">`+`<button class="btn" onclick="addRep()">Upload</button>`}
+else if(s=='appts'){top=bar('Appointments');h=`<h3>Upcoming</h3>`+(D.up.map(a=>`<div class="card"><b>${a[0]}</b><br>${a[1]} | ${a[2]}<br><small>${a[3]}</small></div>`).join('')||'<p class="mut">None</p>')+`<h3>Previous</h3>`+D.prev.map(a=>`<div class="card"><b>${a[0]}</b><br>${a[1]} | ${a[2]}</div>`).join('')+`<button class="btn" onclick="go('book')">+ Book Appointment</button>`}
+else if(s=='book'){top=bar('Book Appointment');h=inp('dr','Doctor Name')+inp('d','Date','date')+inp('tm','Time','time')+inp('rs','Reason')+`<button class="btn" onclick="book()">Confirm Booking</button>`}
+$('top').innerHTML=top;$('body').innerHTML=h;
+$('nav').innerHTML=nav?`<div class="nav">${[['Home','home'],['Records','records'],['Family','family']].map((n,i)=>`<button class="${nav==i+1?'on':''}" onclick="root('${n[1]}')">${n[0]}</button>`).join('')}</div>`:'';$('body').scrollTop=0}
+function login(){if(!v('e')||!v('p'))return toast('Enter email/phone and password');D.user=v('e').split('@')[0];root('home')}
+function signup(){if(!v('n')||!v('e')||!v('p'))return toast('Fill all fields');D.user=v('n');toast('Account created!');root('home')}
+function addRec(){if(!v('t'))return toast('Enter details');D.cats[v('c')].push(v('t')+(v('d')?' ('+v('d')+')':''));D.cat=v('c');toast('Record saved');back()}
+function addMem(){if(!v('n'))return toast('Enter name');D.fam.push([v('n'),v('r')||'Family Member',v('a')||0,v('b')||'-']);toast('Member added');back()}
+function addRep(){if(!v('t'))return toast('Enter report name');D.reports.unshift([v('t'),v('d')||'Today']);toast('Report uploaded');back()}
+function book(){if(!v('dr')||!v('d'))return toast('Enter doctor and date');D.up.push([v('dr'),v('d'),v('tm')||'--',v('rs')||'Check-up']);toast('Appointment booked');back()}
+draw();
+</script></body></html>
